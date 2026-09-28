@@ -30,15 +30,119 @@ const authedAdmin = req => sessions.get(cookie(req).admin)?.type==="admin";
 const authedLead = req => sessions.get(cookie(req).member)?.leadId;
 
 const styles = `
-:root{--ink:#10243e;--muted:#667085;--line:#e7ebf1;--bg:#f6f8fb;--card:#fff;--blue:#2457e6}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:linear-gradient(180deg,#fbfcfe,#f4f7fb 45%,#f7f9fc)}
-a{text-decoration:none;color:inherit}.shell{max-width:1180px;margin:auto;padding:0 24px}.nav{height:76px;display:flex;align-items:center;justify-content:space-between}.brand{display:flex;gap:12px;align-items:center;font-weight:780;letter-spacing:-.02em}.mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,#173f9b,#4f79ef);display:grid;place-items:center;color:#fff;font-weight:900}.navlinks{display:flex;gap:10px}.pill,.btn{border:1px solid var(--line);background:white;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer}.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.hero{padding:66px 0 38px;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}.eyebrow{font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:#5070a7}.hero h1{font-size:58px;line-height:1.02;letter-spacing:-.055em;margin:14px 0 18px}.lead{font-size:20px;line-height:1.6;color:#59677c;max-width:700px}.heroCard{background:rgba(255,255,255,.9);border:1px solid #e7ebf3;border-radius:28px;padding:30px;box-shadow:0 24px 70px rgba(36,57,96,.12)}.count{font-size:64px;font-weight:820;letter-spacing:-.06em}.small{font-size:13px;color:var(--muted)}.timeline{display:flex;gap:8px;margin:26px 0}.seg{height:7px;flex:1;border-radius:999px;background:#dce4f1}.seg.on{background:#4168df}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 8px 30px rgba(18,42,76,.05)}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}.section{padding:26px 0 64px}.section h2{font-size:34px;letter-spacing:-.035em;margin:0 0 18px}.kicker{color:#486183;font-weight:700}.metric{font-size:36px;font-weight:800;letter-spacing:-.045em}.topbar{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:22px 0}.tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:13px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;white-space:nowrap}.table th{color:#6b778c;font-size:12px;text-transform:uppercase;letter-spacing:.07em}.badge{display:inline-flex;padding:6px 9px;border-radius:999px;background:#eff3f9;font-size:12px;font-weight:750}.badge.green{background:#e9f8f2;color:#087456}.badge.gold{background:#fff4df;color:#8a5a08}.form{display:grid;gap:12px}.input,textarea{width:100%;border:1px solid #dce2eb;border-radius:13px;padding:13px 14px;background:#fff;font:inherit}.loginbox{max-width:470px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:26px;padding:34px;box-shadow:0 24px 80px rgba(22,41,74,.12)}.notice{padding:13px 15px;border-radius:13px;background:#f0f5ff;color:#294a8d;font-size:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.spacer{height:20px}.footer{padding:35px 0;color:#7a8799;font-size:13px}.progress{height:10px;background:#e8edf5;border-radius:20px;overflow:hidden}.progress>i{display:block;height:100%;background:#2c5de2;border-radius:20px}
-@media(max-width:850px){.hero{grid-template-columns:1fr;padding-top:30px}.hero h1{font-size:43px}.grid3,.grid2{grid-template-columns:1fr}.navlinks .hideMobile{display:none}.count{font-size:50px}}
+:root{
+  --ink:#0f2340;--ink2:#1a3558;--muted:#66758b;--line:#e4eaf2;--line2:#d8e1ed;
+  --paper:#ffffff;--bg:#f5f8fc;--blue:#2356d8;--blue2:#173d9f;--blue3:#edf3ff;
+  --green:#0a7b5e;--gold:#94651b;--shadow:0 18px 60px rgba(20,43,78,.10);
+  --shadow2:0 6px 24px rgba(20,43,78,.06)
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:
+radial-gradient(circle at 76% 9%,rgba(76,118,232,.10),transparent 28%),
+linear-gradient(180deg,#fbfdff 0%,#f5f8fc 52%,#fff 100%);-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}.shell{max-width:1220px;margin:auto;padding:0 28px}
+.nav{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(219,227,239,.7)}
+.brand{display:flex;gap:12px;align-items:center;font-weight:800;letter-spacing:-.025em}.brand .small{margin-top:1px}
+.mark{width:40px;height:40px;border-radius:13px;background:linear-gradient(145deg,#163b96,#4778ef);display:grid;place-items:center;color:#fff;font-weight:900;box-shadow:0 9px 22px rgba(35,86,216,.22)}
+.navlinks{display:flex;gap:10px;align-items:center}
+.pill,.btn{border:1px solid var(--line2);background:rgba(255,255,255,.9);border-radius:999px;padding:11px 17px;font-weight:750;cursor:pointer;transition:.18s ease;box-shadow:0 1px 0 rgba(15,35,64,.02)}
+.pill:hover,.btn:hover{transform:translateY(-1px);box-shadow:0 7px 20px rgba(20,43,78,.09)}
+.btn.primary{background:linear-gradient(135deg,var(--blue),#3269ef);color:#fff;border-color:transparent;box-shadow:0 10px 24px rgba(35,86,216,.24)}
+.hero{padding:78px 0 54px;display:grid;grid-template-columns:1.1fr .9fr;gap:68px;align-items:center;min-height:620px}
+.eyebrow{font-size:12px;letter-spacing:.145em;text-transform:uppercase;font-weight:850;color:#4e70ad}
+.hero h1{font-size:66px;line-height:.99;letter-spacing:-.06em;margin:15px 0 22px;max-width:720px}
+.lead{font-size:20px;line-height:1.65;color:#5c6d84;max-width:690px}
+.trustline{display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#718097;font-size:13px;font-weight:650}
+.trustline span:before{content:"✓";display:inline-grid;place-items:center;width:18px;height:18px;margin-right:7px;border-radius:50%;background:#eaf6f1;color:#08795b;font-size:11px}
+.heroCard{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(250,252,255,.96));border:1px solid #dfe7f2;border-radius:30px;padding:32px;box-shadow:var(--shadow);overflow:hidden}
+.heroCard:before{content:"";position:absolute;right:-75px;top:-85px;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(71,120,239,.16),rgba(71,120,239,0) 68%)}
+.count{font-size:72px;font-weight:850;letter-spacing:-.07em;line-height:1}.small{font-size:13px;line-height:1.48;color:var(--muted)}
+.timeline{display:flex;gap:8px;margin:28px 0 24px}.seg{height:8px;flex:1;border-radius:999px;background:#dfe6f1}.seg.on{background:linear-gradient(90deg,#2b5be0,#4878ef)}
+.card{background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:var(--shadow2)}
+.card h3{font-size:19px;letter-spacing:-.025em;margin:11px 0 8px}.card p{margin-bottom:0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.section{padding:34px 0 72px}.section h2{font-size:38px;letter-spacing:-.045em;margin:0 0 18px}
+.kicker{color:#45618b;font-weight:760}.metric{font-size:38px;font-weight:840;letter-spacing:-.05em}.topbar{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:24px 0}
+.featureStrip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:var(--shadow2)}
+.featureItem{background:rgba(255,255,255,.95);padding:22px}.featureItem b{display:block;margin-bottom:5px;font-size:14px}.featureItem .small{font-size:12px}
+.journey{margin-top:22px;padding:28px;border:1px solid var(--line);border-radius:26px;background:linear-gradient(180deg,#fff,#fbfcff)}
+.journeySteps{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:22px}.journeyStep{position:relative;padding-top:20px}.journeyStep:before{content:"";position:absolute;top:0;left:0;width:100%;height:5px;border-radius:99px;background:#dce4ef}.journeyStep.active:before{background:#3768e7}.journeyStep b{display:block;font-size:13px;margin-bottom:4px}.journeyStep span{font-size:12px;color:var(--muted)}
+.tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:13px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;white-space:nowrap}.table th{color:#6b778c;font-size:12px;text-transform:uppercase;letter-spacing:.07em}
+.badge{display:inline-flex;padding:6px 9px;border-radius:999px;background:#eff3f9;font-size:12px;font-weight:750}.badge.green{background:#e9f8f2;color:#087456}.badge.gold{background:#fff4df;color:#8a5a08}
+.form{display:grid;gap:12px}.input,textarea{width:100%;border:1px solid #d8e1ed;border-radius:14px;padding:14px;background:#fff;font:inherit;outline:none}.input:focus,textarea:focus{border-color:#7e9fe8;box-shadow:0 0 0 4px rgba(55,104,231,.08)}
+.loginbox{max-width:500px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:28px;padding:36px;box-shadow:var(--shadow)}
+.notice{padding:13px 15px;border-radius:13px;background:#f0f5ff;color:#294a8d;font-size:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.spacer{height:20px}
+.footer{padding:34px 0 44px;color:#7a8799;font-size:12px;border-top:1px solid rgba(228,234,242,.8)}
+.progress{height:10px;background:#e8edf5;border-radius:20px;overflow:hidden}.progress>i{display:block;height:100%;background:linear-gradient(90deg,#2457e6,#4d79ee);border-radius:20px}
+@media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:38px;gap:34px;min-height:0}.hero h1{font-size:47px}.grid3,.grid2,.featureStrip,.journeySteps{grid-template-columns:1fr}.navlinks .hideMobile{display:none}.count{font-size:56px}.shell{padding:0 18px}.heroCard{padding:26px}}
 `;
 
-function page(title,body){return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · ${APP_NAME}</title><style>${styles}</style></head><body><div class="shell"><div class="nav"><a class="brand" href="/"><div class="mark">A</div><div>My Medicare Timeline<div class="small">Powered by Allsup</div></div></a><div class="navlinks"><a class="pill hideMobile" href="/education">Medicare education</a><a class="btn primary" href="/login">View my timeline</a></div></div>${body}<div class="footer">My Medicare Timeline · Educational information is not a substitute for plan-specific advice. © 2026</div></div></body></html>`}
+function pagefunction page(title,body){return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · ${APP_NAME}</title><style>${styles}</style></head><body><div class="shell"><div class="nav"><a class="brand" href="/"><div class="mark">A</div><div>My Medicare Timeline<div class="small">Powered by Allsup</div></div></a><div class="navlinks"><a class="pill hideMobile" href="/education">Medicare education</a><a class="btn primary" href="/login">View my timeline</a></div></div>${body}<div class="footer">My Medicare Timeline · Educational information is not a substitute for plan-specific advice. © 2026</div></div></body></html>`}
 
-function landing(){return page("Welcome",`<section class="hero"><div><div class="eyebrow">A calmer path to Medicare</div><h1>Know what’s next.<br>Before you need to.</h1><p class="lead">A personalized Medicare journey that keeps you informed from your first eligibility milestone through enrollment — with clear education, timely reminders and access to a real advisor when you need one.</p><div class="row"><a class="btn primary" href="/login">View my timeline</a><a class="pill" href="/education">Explore Medicare basics</a></div></div><div class="heroCard"><div class="small">Example Medicare eligibility</div><div class="count">214</div><div class="kicker">days to Medicare</div><div class="timeline"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div><div class="card"><b>You’re on track.</b><p class="small">Nothing urgent right now. We’ll notify you as your next Medicare milestone approaches.</p></div></div></section><section class="section"><div class="grid3"><div class="card"><div class="eyebrow">Personalized</div><h3>Your timeline, not a generic checklist</h3><p class="small">Education and reminders adjust automatically around your Medicare eligibility date.</p></div><div class="card"><div class="eyebrow">Human help</div><h3>An advisor when the timing is right</h3><p class="small">Ask for help when you want it, or let the system surface the right next step.</p></div><div class="card"><div class="eyebrow">Optional extras</div><h3>Learn about protection beyond Medicare</h3><p class="small">Explore hospital indemnity, dental, vision and other options without pressure.</p></div></div></section>`)}
+function landing(){return page("Welcome",`
+<section class="hero">
+  <div>
+    <div class="eyebrow">Your Medicare journey, made simpler</div>
+    <h1>Know what’s next.<br>Feel ready for it.</h1>
+    <p class="lead">Your personalized Medicare Timeline turns a long waiting period into a clear path — with timely education, simple reminders and a real advisor when the timing is right.</p>
+    <div class="row" style="margin-top:26px">
+      <a class="btn primary" href="/login">Open my timeline</a>
+      <a class="pill" href="/education">Explore Medicare basics</a>
+    </div>
+    <div class="trustline">
+      <span>No password to remember</span>
+      <span>Personalized to your date</span>
+      <span>Optional advisor support</span>
+    </div>
+  </div>
+  <div class="heroCard">
+    <div class="eyebrow">Your Medicare countdown</div>
+    <div style="display:flex;align-items:end;justify-content:space-between;gap:16px;margin-top:14px">
+      <div><div class="count">214</div><div class="kicker">days until Medicare</div></div>
+      <span class="badge green">On track</span>
+    </div>
+    <div class="timeline"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
+    <div class="card" style="box-shadow:none">
+      <div class="eyebrow">Next milestone</div>
+      <h3>Nothing you need to do today.</h3>
+      <p class="small">We’ll let you know when it’s time to learn, prepare or speak with an advisor.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="featureStrip">
+    <div class="featureItem"><b>Personal timeline</b><span class="small">Built around your expected Medicare eligibility date.</span></div>
+    <div class="featureItem"><b>Short education</b><span class="small">Clear guidance delivered when it becomes relevant.</span></div>
+    <div class="featureItem"><b>Advisor access</b><span class="small">Human help when you want it — not constant sales pressure.</span></div>
+    <div class="featureItem"><b>Coverage education</b><span class="small">Learn about optional products such as hospital indemnity.</span></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="eyebrow">A journey that changes with you</div>
+  <h2 style="margin-top:10px">Nine months should not feel like nine months of waiting.</h2>
+  <p class="lead">Your experience evolves as Medicare gets closer. Early on, we keep things light. As enrollment approaches, your checklist, education and access to an advisor become more action-oriented.</p>
+  <div class="journey">
+    <div class="journeySteps">
+      <div class="journeyStep active"><b>6–9 months</b><span>Orientation & reassurance</span></div>
+      <div class="journeyStep active"><b>3–6 months</b><span>Medicare fundamentals</span></div>
+      <div class="journeyStep"><b>90 days</b><span>Preparation checklist</span></div>
+      <div class="journeyStep"><b>60–30 days</b><span>Advisor & plan review</span></div>
+      <div class="journeyStep"><b>Enrollment</b><span>Confident next steps</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="grid3">
+    <div class="card"><div class="eyebrow">Education</div><h3>Learn only what matters now</h3><p class="small">No giant Medicare encyclopedia on day one. We surface the right concepts at the right point in your journey.</p></div>
+    <div class="card"><div class="eyebrow">Protection</div><h3>Understand possible gaps</h3><p class="small">Explore optional coverage such as hospital indemnity, dental and vision when it makes sense for you.</p></div>
+    <div class="card"><div class="eyebrow">Support</div><h3>A real person when you’re ready</h3><p class="small">Request help at any time, and your advisor can see where you are in the journey before reaching out.</p></div>
+  </div>
+</section>
+`)}
 
 function education(){return page("Medicare education",`<section class="section"><div class="eyebrow">Education center</div><h2>Medicare, explained clearly.</h2><p class="lead">Short, practical guides timed to the questions people usually have as eligibility gets closer.</p><div class="grid3"><div class="card"><span class="badge">Start here</span><h3>Parts A, B, C and D</h3><p class="small">Understand the building blocks of Medicare and how they fit together.</p></div><div class="card"><span class="badge">Planning</span><h3>Original Medicare vs. Medicare Advantage</h3><p class="small">A neutral overview of the different ways Medicare coverage can be structured.</p></div><div class="card"><span class="badge">Protection</span><h3>What Medicare may not cover</h3><p class="small">Learn about common out-of-pocket gaps and optional products such as hospital indemnity.</p></div></div></section>`)}
 
