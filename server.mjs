@@ -1,11 +1,19 @@
 import http from "node:http";
 import crypto from "node:crypto";
 import { URL } from "node:url";
+import pg from "pg";
 
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@allsuptimeline.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "ChangeMeNow!";
 const APP_NAME = "Allsup Timeline";
+const DATABASE_URL = process.env.DATABASE_URL || "";
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+const EMAIL_FROM = process.env.EMAIL_FROM || "My Medicare Timeline <noreply@allsuptimeline.com>";
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || "";
+const { Pool } = pg;
+const pool = DATABASE_URL ? new Pool({connectionString:DATABASE_URL,ssl:{rejectUnauthorized:false}}) : null;
+const otpCodes = new Map();
 
 let leads = [
   {id:"L1001",firstName:"Sarah",lastName:"Johnson",email:"sarah@example.com",phone:"(314) 555-0142",eligibility:"2027-04-01",advisor:"Unassigned",emailOk:true,smsOk:false,marketingOk:false,interest:[],lastTouch:"Welcome email queued"},
@@ -26,6 +34,53 @@ let campaigns = [
 {id:"enrollment",days:30,name:"Enrollment readiness",kind:"Service",channel:"Email",active:true,subject:"Your Medicare enrollment window is approaching",body:"Final preparation and next actions."}
 ];
 let sessions = new Map();
+
+async function ensureStateTable(){
+  if(!pool)return;
+  await pool.query(`CREATE TABLE IF NOT EXISTS app_state (
+    id integer PRIMARY KEY,
+    payload jsonb NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`);
+}
+async function hydrateState(){
+  if(!pool)return;
+  await ensureStateTable();
+  const r=await pool.query("SELECT payload FROM app_state WHERE id=1");
+  if(r.rows[0]?.payload){
+    const p=r.rows[0].payload;
+    leads=Array.isArray(p.leads)?p.leads:leads;
+    communications=Array.isArray(p.communications)?p.communications:communications;
+    tasks=Array.isArray(p.tasks)?p.tasks:tasks;
+    campaigns=Array.isArray(p.campaigns)?p.campaigns:campaigns;
+  }else{
+    await persistState();
+  }
+}
+async function persistState(){
+  if(!pool)return;
+  await ensureStateTable();
+  const payload=JSON.stringify({leads,communications,tasks,campaigns});
+  await pool.query(`INSERT INTO app_state(id,payload,updated_at) VALUES(1,$1::jsonb,now())
+    ON CONFLICT(id) DO UPDATE SET payload=EXCLUDED.payload,updated_at=now()`,[payload]);
+}
+async function sendEmail(to,subject,html){
+  if(!RESEND_API_KEY)return {ok:false,reason:"email_not_configured"};
+  const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"authorization":"Bearer "+RESEND_API_KEY,"content-type":"application/json"},body:JSON.stringify({from:EMAIL_FROM,to:[to],subject,html})});
+  return {ok:r.ok,status:r.status};
+}
+function createOtp(email){
+  const code=String(Math.floor(100000+Math.random()*900000));
+  otpCodes.set(email.toLowerCase(),{code,expires:Date.now()+10*60*1000,attempts:0});
+  return code;
+}
+function verifyOtp(email,code){
+  const key=String(email||"").toLowerCase(),rec=otpCodes.get(key);
+  if(!rec||rec.expires<Date.now()||rec.attempts>=5)return false;
+  rec.attempts++;
+  if(rec.code!==String(code||"").trim())return false;
+  otpCodes.delete(key);return true;
+}
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
 const json = (res,code,obj) => { res.writeHead(code,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}); res.end(JSON.stringify(obj)); };
