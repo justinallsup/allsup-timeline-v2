@@ -17,6 +17,14 @@ let communications = [
   {id:"C2",leadId:"L1003",kind:"Service",channel:"SMS",subject:"Your Medicare review window is approaching",status:"Sent",at:"2026-09-27"}
 ];
 let tasks = [{id:"T1",leadId:"L1002",title:"Follow up on Hospital Indemnity interest",owner:"Jamie",due:"2026-09-30",status:"Open"}];
+let campaigns = [
+{id:"welcome",days:270,name:"Welcome & reassurance",kind:"Education",channel:"Email",active:true,subject:"Welcome to your Medicare Timeline",body:"A simple introduction to what happens between now and Medicare eligibility."},
+{id:"basics",days:180,name:"Medicare fundamentals",kind:"Education",channel:"Email",active:true,subject:"Medicare basics: what to know before enrollment",body:"A short guide to Parts A, B, C and D."},
+{id:"gaps",days:120,name:"Optional coverage education",kind:"Marketing",channel:"Email",active:true,subject:"Understanding common gaps around Medicare",body:"Optional coverage education such as hospital indemnity, dental and vision."},
+{id:"prepare",days:90,name:"90-day preparation",kind:"Education",channel:"Email",active:true,subject:"Your 90-day Medicare preparation checklist",body:"Simple checklist for documents, providers, prescriptions and questions."},
+{id:"advisor",days:60,name:"Advisor introduction",kind:"Service",channel:"Email",active:true,subject:"Your Medicare review window is getting closer",body:"Introduce advisor support and make it easy to request a conversation."},
+{id:"enrollment",days:30,name:"Enrollment readiness",kind:"Service",channel:"Email",active:true,subject:"Your Medicare enrollment window is approaching",body:"Final preparation and next actions."}
+];
 let sessions = new Map();
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
@@ -28,6 +36,10 @@ const token = ()=>crypto.randomBytes(24).toString("hex");
 const cookie = req => Object.fromEntries((req.headers.cookie||"").split(";").filter(Boolean).map(x=>x.trim().split("=")));
 const authedAdmin = req => sessions.get(cookie(req).admin)?.type==="admin";
 const authedLead = req => sessions.get(cookie(req).member)?.leadId;
+const engagementScore = l => Math.min(100,28+(l.emailOk?12:0)+(l.smsOk?12:0)+(l.marketingOk?8:0)+((l.interest||[]).length?20:0)+(tasks.some(t=>t.leadId===l.id)?10:0)+Math.min(10,communications.filter(c=>c.leadId===l.id).length*3));
+const nextCampaignFor = l => {const d=daysUntil(l.eligibility),sent=l.sentCampaigns||[];return campaigns.filter(c=>c.active&&d<=c.days&&!sent.includes(c.id)&&(c.kind!=="Marketing"||l.marketingOk)).sort((a,b)=>a.days-b.days)[0]||null};
+const lessonFor = d => d>180?{tag:"2-minute lesson",title:"What happens before Medicare starts?",body:"A quick orientation to your waiting period, what can wait, and what will matter later."}:d>90?{tag:"Medicare basics",title:"Parts A, B, C and D — without the jargon",body:"Understand the basic building blocks before you start comparing plan choices."}:d>30?{tag:"Prepare",title:"Build your provider and prescription list",body:"A short checklist that makes your eventual plan review faster and more useful."}:{tag:"Enrollment ready",title:"Questions to answer before you choose coverage",body:"A focused guide for the final stretch before your enrollment decision."};
+const checklistFor = d => d>180?["Confirm your expected Medicare eligibility date","Keep your email and phone number current","Read one short Medicare lesson when it arrives"]:d>90?["Review Medicare Parts A, B, C and D","Start a list of your doctors and prescriptions","Consider whether you want optional text reminders"]:d>30?["Confirm doctors, prescriptions and preferred pharmacies","Write down questions for your advisor","Review your current coverage and expected transition date"]:["Schedule or confirm your Medicare review","Have your provider and prescription list ready","Review next steps before your eligibility date"];
 
 const styles = `
 :root{
