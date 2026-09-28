@@ -17,6 +17,7 @@ const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "support@allsuptimeline.com";
 const { Pool } = pg;
 const pool = DATABASE_URL ? new Pool({connectionString:DATABASE_URL,ssl:{rejectUnauthorized:false}}) : null;
 const otpCodes = new Map();
+const rateBuckets = new Map();
 
 let leads = [
   {id:"L1001",firstName:"Sarah",lastName:"Johnson",email:"sarah@example.com",phone:"(314) 555-0142",eligibility:"2027-04-01",advisor:"Unassigned",emailOk:true,smsOk:false,marketingOk:false,interest:[],lastTouch:"Welcome email queued"},
@@ -91,6 +92,7 @@ const readBody = req => new Promise((resolve,reject)=>{ let b=""; req.on("data",
 const daysUntil = d => Math.ceil((new Date(d+"T12:00:00Z")-Date.now())/86400000);
 const stageFor = d => { const x=daysUntil(d); return x>180?"6–9 months":x>90?"3–6 months":x>30?"30–90 days":x>0?"Under 30 days":"Eligible now"; };
 const token = ()=>crypto.randomBytes(24).toString("hex");
+const rateOk = (key,limit=6,windowMs=600000) => {const now=Date.now(),arr=(rateBuckets.get(key)||[]).filter(t=>now-t<windowMs);if(arr.length>=limit)return false;arr.push(now);rateBuckets.set(key,arr);return true};
 const cookie = req => Object.fromEntries((req.headers.cookie||"").split(";").filter(Boolean).map(x=>x.trim().split("=")));
 const authedAdmin = req => sessions.get(cookie(req).admin)?.type==="admin";
 const authedLead = req => sessions.get(cookie(req).member)?.leadId;
@@ -281,7 +283,7 @@ async function saveCampaign(id,btn){const row=btn.closest('.campaignRow'),subjec
 async function toggleCampaign(id,active,btn){const r=await fetch('/api/admin/campaign',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id,active})});const j=await r.json();if(j.ok)location.reload()}
 </script>`)}
 
-function sendHtml(res,html){res.writeHead(200,{"content-type":"text/html; charset=utf-8","cache-control":"no-store"});res.end(html)}
+function sendHtml(res,html){res.writeHead(200,{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","x-frame-options":"DENY","referrer-policy":"strict-origin-when-cross-origin","permissions-policy":"camera=(), microphone=(), geolocation=()"});res.end(html)}
 function redirect(res,to,cookieHeader){res.writeHead(302,{Location:to,...(cookieHeader?{"Set-Cookie":cookieHeader}:{})});res.end()}
 function formBody(req){return new Promise(resolve=>{let b="";req.on("data",d=>b+=d);req.on("end",()=>resolve(Object.fromEntries(new URLSearchParams(b))))})}
 
@@ -296,11 +298,11 @@ if(req.method==="POST"&&url.pathname==="/sms"){const b=await formBody(req),email
 if(req.method==="GET"&&url.pathname==="/privacy")return sendHtml(res,privacyPage());
 if(req.method==="GET"&&url.pathname==="/terms")return sendHtml(res,termsPage());
 if(req.method==="GET"&&url.pathname==="/login")return sendHtml(res,login());
-if(req.method==="POST"&&url.pathname==="/login"){const b=await formBody(req),email=String(b.email||"").toLowerCase(),lead=leads.find(x=>x.email.toLowerCase()===email);if(!lead)return sendHtml(res,login("We couldn’t find that email in the lead list."));const code=createOtp(email);const sent=await sendEmail(email,"Your My Medicare Timeline sign-in code",`<div style="font-family:Arial,sans-serif"><h2>Your sign-in code</h2><p>Use this six-digit code to open your Medicare Timeline:</p><p style="font-size:30px;font-weight:700;letter-spacing:6px">${code}</p><p>This code expires in 10 minutes.</p></div>`);return sendHtml(res,verifyLogin(email,sent.ok?"We sent your code.":(email.endsWith("@example.com")?"Email delivery is not configured on this staging environment yet.": "Email delivery is not configured yet."),sent.ok?"":(email.endsWith("@example.com")?code:"")))}
+if(req.method==="POST"&&url.pathname==="/login"){const b=await formBody(req),email=String(b.email||"").toLowerCase(),lead=leads.find(x=>x.email.toLowerCase()===email);if(!lead)return sendHtml(res,login("We couldn’t find that email in the lead list."));if(!rateOk("otp:"+email,5,900000))return sendHtml(res,login("Too many sign-in attempts. Please wait 15 minutes and try again."));const code=createOtp(email);const sent=await sendEmail(email,"Your My Medicare Timeline sign-in code",`<div style="font-family:Arial,sans-serif"><h2>Your sign-in code</h2><p>Use this six-digit code to open your Medicare Timeline:</p><p style="font-size:30px;font-weight:700;letter-spacing:6px">${code}</p><p>This code expires in 10 minutes.</p></div>`);return sendHtml(res,verifyLogin(email,sent.ok?"We sent your code.":(email.endsWith("@example.com")?"Email delivery is not configured on this staging environment yet.": "Email delivery is not configured yet."),sent.ok?"":(email.endsWith("@example.com")?code:"")))}
 if(req.method==="POST"&&url.pathname==="/verify"){const b=await formBody(req),email=String(b.email||"").toLowerCase(),lead=leads.find(x=>x.email.toLowerCase()===email);if(!lead||!verifyOtp(email,b.code))return sendHtml(res,verifyLogin(email,"That code is invalid or expired."));const t=token();sessions.set(t,{type:"member",leadId:lead.id});return redirect(res,"/timeline",`member=${t}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`)}
 if(req.method==="GET"&&url.pathname==="/timeline"){const id=authedLead(req),lead=leads.find(x=>x.id===id);if(!lead)return redirect(res,"/login");return sendHtml(res,memberPage(lead))}
 if(req.method==="GET"&&url.pathname==="/preferences"){const id=authedLead(req),lead=leads.find(x=>x.id===id);if(!lead)return redirect(res,"/login");return sendHtml(res,prefs(lead))}
-if(req.method==="POST"&&url.pathname==="/preferences"){const id=authedLead(req),lead=leads.find(x=>x.id===id);if(!lead)return redirect(res,"/login");const b=await formBody(req);lead.emailOk=!!b.emailOk;lead.smsOk=!!b.smsOk;lead.marketingOk=!!b.marketingOk;await persistState();return redirect(res,"/timeline")}
+if(req.method==="POST"&&url.pathname==="/preferences"){const id=authedLead(req),lead=leads.find(x=>x.id===id);if(!lead)return redirect(res,"/login");const b=await formBody(req);lead.emailOk=!!b.emailOk;lead.smsOk=!!b.smsOk;lead.marketingOk=!!b.marketingOk;lead.preferencesUpdatedAt=new Date().toISOString();await persistState();return redirect(res,"/timeline")}
 if(req.method==="GET"&&url.pathname==="/logout")return redirect(res,"/","member=; Path=/; Max-Age=0");
 if(req.method==="GET"&&url.pathname==="/admin")return authedAdmin(req)?sendHtml(res,admin()):sendHtml(res,adminLogin());
 if(req.method==="POST"&&url.pathname==="/admin/login"){const b=await formBody(req);if(b.email!==ADMIN_EMAIL||b.password!==ADMIN_PASSWORD)return sendHtml(res,adminLogin("That sign-in did not match the configured admin credentials."));const t=token();sessions.set(t,{type:"admin"});return redirect(res,"/admin",`admin=${t}; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800`)}
